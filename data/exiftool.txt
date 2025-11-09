@@ -1,0 +1,9 @@
+run:
+exiftool -LensModel -FocalLength -FocalLengthIn35mmFormat -ImageWidth -ImageHeight "C:\Users\debbanerjee\OneDrive - Stony Brook University\Desktop\Sem3\CSE527 - Intro to CV\camera_pose_estimation\videos\IMG_0171.mov"
+
+result:
+Lens Model                      : iPhone 15 back camera 5.96mm f/1.6
+Focal Length In 35mm Format     : 25
+Image Width                     : 1920
+Image Height                    : 1440
+
