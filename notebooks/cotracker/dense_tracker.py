@@ -210,14 +210,8 @@ np.savez(
 print("Saved tracks to:", out_path)
 
 # ----------------------------------------------------------------------
-# 6. Also visualize like demo (optional)
+# 6. Visualize in TWO ways: with track history AND points-only
 # ----------------------------------------------------------------------
-vis = Visualizer(
-    save_dir=SAVE_DIR,
-    linewidth=2,
-    mode='cool',
-    tracks_leave_trace=-1,
-)
 
 # ---------------------------------------------------------
 # CLEAN TRACKS FOR VISUALIZATION
@@ -234,7 +228,7 @@ invalid = (
 )
 vis_clean[invalid] = 0
 
-# 3. Forward-fill NaN values with last valid position (or backward-fill)
+# 3. Forward-fill NaN values with last valid position
 for track_idx in range(tracks_clean.shape[1]):
     track = tracks_clean[:, track_idx, :]  # (T, 2)
     mask = ~np.isnan(track[:, 0])
@@ -256,13 +250,40 @@ tracks_clean[..., 0] = np.clip(tracks_clean[..., 0], 0, Wr - 1)
 tracks_clean[..., 1] = np.clip(tracks_clean[..., 1], 0, Hr - 1)
 
 # ---------------------------------------------------------
-# VISUALIZE
+# VISUALIZATION 1: WITH TRACK HISTORY (trails)
 # ---------------------------------------------------------
-vis.visualize(
+vis_trails = Visualizer(
+    save_dir=SAVE_DIR,
+    linewidth=2,
+    mode='cool',
+    tracks_leave_trace=-1,  # -1 means full history
+)
+
+vis_trails.visualize(
     video=video,
     tracks=torch.from_numpy(tracks_clean)[None],     # (1, T, N, 2)
     visibility=torch.from_numpy(vis_clean)[None],    # (1, T, N)
-    filename="superpoint_queries_backward_plus_new"
+    filename="superpoint_with_trails"
 )
 
-print("Visualization saved to:", SAVE_DIR)
+print("Track history visualization saved to:", SAVE_DIR)
+
+# ---------------------------------------------------------
+# VISUALIZATION 2: POINTS ONLY (no trails)
+# ---------------------------------------------------------
+vis_points = Visualizer(
+    save_dir=SAVE_DIR,
+    linewidth=2,
+    mode='cool',
+    tracks_leave_trace=0,  # 0 means no history, just current points
+)
+
+vis_points.visualize(
+    video=video,
+    tracks=torch.from_numpy(tracks_clean)[None],     # (1, T, N, 2)
+    visibility=torch.from_numpy(vis_clean)[None],    # (1, T, N)
+    filename="superpoint_floating_points"
+)
+
+print("Points-only visualization saved to:", SAVE_DIR)
+print("All visualizations complete!")
