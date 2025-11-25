@@ -1,3 +1,7 @@
 .venv
-/data/frames/
-/data/videos/
+/data/frames/*
+/data/videos/*
+/data/tracks/*
+logs/*
+run.sh
+.env
