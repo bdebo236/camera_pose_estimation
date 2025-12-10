@@ -4,24 +4,15 @@ import torch
 import numpy as np
 import cv2
 
-# -----------------------------------------------------
-# Paths
-# -----------------------------------------------------
-VIDEO_PATH = "../data/videos/IMG_0171.MOV"
-SAVE_PATH  = "../data/tracks/IMG_0171_tracks/superpoint_kpts.npz"
+IMG_NAME  = "IMG_0171"
+VIDEO_PATH = f"../data/videos/{IMG_NAME}.MOV"
+SAVE_PATH  = f"../data/tracks/{IMG_NAME}_tracks/superpoint_kpts.npz"
 
 os.makedirs(os.path.dirname(SAVE_PATH), exist_ok=True)
-
-# -----------------------------------------------------
-# Import SuperPoint (from your SuperGlue folder)
-# -----------------------------------------------------
 sys.path.append(os.path.expanduser("~/superglue"))   # adjust if needed
 
 from models.superpoint import SuperPoint
 
-# -----------------------------------------------------
-# Load video
-# -----------------------------------------------------
 def load_video(path):
     cap = cv2.VideoCapture(path)
     frames = []
@@ -38,9 +29,7 @@ video = load_video(VIDEO_PATH)  # (T, H, W)
 T, H, W = video.shape
 print("Loaded video:", video.shape)
 
-# -----------------------------------------------------
-# Initialize SuperPoint
-# -----------------------------------------------------
+# initialize superPoint
 sp_config = {
     'descriptor_dim': 256,
     'nms_radius': 3,
@@ -50,9 +39,7 @@ sp_config = {
 superpoint = SuperPoint(sp_config)
 superpoint = superpoint.cuda().eval()
 
-# -----------------------------------------------------
-# Extract keypoints for each frame
-# -----------------------------------------------------
+# extract keypoints for each frame
 all_kpts = []      # list length T, each (N_i, 2)
 all_scores = []    # (N_i,)
 all_desc = []      # (256, N_i)
@@ -76,9 +63,7 @@ for t in range(T):
 
     print(f"Frame {t}: {kpts.shape[0]} keypoints")
 
-# -----------------------------------------------------
-# Save everything to NPZ
-# -----------------------------------------------------
+# save
 np.savez(
     SAVE_PATH,
     keypoints=np.array(all_kpts, dtype=object),

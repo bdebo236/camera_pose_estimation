@@ -10,13 +10,11 @@ sys.path.append(os.path.expanduser("~/co-tracker"))
 from cotracker.utils.visualizer import Visualizer, read_video_from_path
 from cotracker.predictor import CoTrackerPredictor
 
-# ----------------------------------------------------------------------
-# CONFIG
-# ----------------------------------------------------------------------
-VIDEO_PATH      = "../data/videos/IMG_0171.MOV"
-SP_KPTS_PATH    = "../data/tracks/IMG_0171_tracks/superpoint_kpts.npz"
+IMG_NAME       = "IMG_0171"
+VIDEO_PATH      = f"../data/videos/{IMG_NAME}.MOV"
+SP_KPTS_PATH    = f"../data/tracks/{IMG_NAME}_tracks/superpoint_kpts.npz"
 CHECKPOINT      = os.path.expanduser("~/co-tracker/checkpoints/scaled_offline.pth")
-SAVE_DIR        = "../data/tracks/IMG_0171_cotracker_superpoint"
+SAVE_DIR        = f"../data/tracks/{IMG_NAME}_cotracker_superpoint"
 QUERY_FRAME     = 20        # like grid_query_frame=20
 MAX_POINTS      = 500       # limit for stability / speed
 
@@ -35,9 +33,7 @@ MAX_NEW_POINTS_PER_INJECTION = 200
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-# ----------------------------------------------------------------------
-# 1. Load video and resize (same logic as fixed demo)
-# ----------------------------------------------------------------------
+# Load video and resize
 video_np = read_video_from_path(VIDEO_PATH)  # (T, H, W, C)
 T = video_np.shape[0]
 
@@ -55,9 +51,7 @@ if torch.cuda.is_available():
 
 print("Video shape for CoTracker:", video.shape)  # (1, T, 3, Hr, Wr)
 
-# ----------------------------------------------------------------------
-# 2. Load SuperPoint keypoints and pick those from QUERY_FRAME
-# ----------------------------------------------------------------------
+# Load SuperPoint keypoints and pick those from QUERY_FRAME
 sp = np.load(SP_KPTS_PATH, allow_pickle=True)
 kpts_all = sp["keypoints"]  # list length T, each (N_i, 2)
 
@@ -74,10 +68,8 @@ kpts_q_resized = np.zeros_like(kpts_q, dtype=np.float32)
 kpts_q_resized[:, 0] = kpts_q[:, 0] * scale_x  # x
 kpts_q_resized[:, 1] = kpts_q[:, 1] * scale_y  # y
 
-# ----------------------------------------------------------------------
-# 3. Build CoTracker queries tensor
-#    Format: [time, x, y] per point
-# ----------------------------------------------------------------------
+# build CoTracker queries tensor
+# format: [time, x, y] per point
 Nq = kpts_q_resized.shape[0]
 queries_np = np.zeros((Nq, 3), dtype=np.float32)
 queries_np[:, 0] = float(QUERY_FRAME)           # time index
@@ -90,9 +82,7 @@ if torch.cuda.is_available():
 # add batch dim for model
 queries = queries[None]  # (1, Nq, 3)
 
-# ----------------------------------------------------------------------
-# 4. Run CoTracker with backward=True (like grid_query_20_backward)
-# ----------------------------------------------------------------------
+# run CoTracker with backward=True (like grid_query_20_backward)
 model = CoTrackerPredictor(checkpoint=CHECKPOINT)
 if torch.cuda.is_available():
     model = model.cuda()
@@ -110,18 +100,14 @@ with torch.no_grad():
 pred_tracks = pred_tracks[0].cpu().numpy()          # (T, Nq, 2)
 pred_visibility = pred_visibility[0].cpu().numpy()  # (T, Nq)
 
-# ----------------------------------------------------------------------
-# 4.1 Apply visibility threshold and kill tracks when they go invisible
-# ----------------------------------------------------------------------
+# apply visibility threshold and kill tracks when they go invisible
 vis_mask = pred_visibility > VIS_THRESH           # (T, Nq) bool
 # set invisible positions to NaN
 pred_tracks[~vis_mask] = np.nan
 
-# ----------------------------------------------------------------------
-# 4.2 Inject new SuperPoint points over time for new objects
-#     - every NEW_POINT_INTERVAL frames
-#     - only points far from existing tracks at that frame
-# ----------------------------------------------------------------------
+# inject new SuperPoint points over time for new objects
+# every NEW_POINT_INTERVAL frames
+# only points far from existing tracks at that frame
 all_extra_tracks = []
 all_extra_vis = []
 
@@ -178,7 +164,7 @@ for frame_idx in range(0, T, NEW_POINT_INTERVAL):
     all_extra_tracks.append(new_tr)
     all_extra_vis.append(new_vis)
 
-# If we added any new tracks, concatenate them onto the main arrays
+# if we added any new tracks, concatenate them onto the main arrays
 if len(all_extra_tracks) > 0:
     extra_tracks = np.concatenate(all_extra_tracks, axis=1)  # (T, sum_K, 2)
     extra_vis = np.concatenate(all_extra_vis, axis=1)        # (T, sum_K)
@@ -188,9 +174,7 @@ if len(all_extra_tracks) > 0:
 
     print("Added extra tracks for new objects. New shape:", pred_tracks.shape)
 
-# ----------------------------------------------------------------------
-# 5. Save raw tracks + metadata to NPZ for later pose/depth
-# ----------------------------------------------------------------------
+# save raw tracks + metadata to NPZ for later pose/depth
 out_path = os.path.join(SAVE_DIR, "cotracker_superpoint_tracks.npz")
 np.savez(
     out_path,
@@ -209,26 +193,18 @@ np.savez(
 
 print("Saved tracks to:", out_path)
 
-# ----------------------------------------------------------------------
-# 6. Visualize in TWO ways: with track history AND points-only
-# ----------------------------------------------------------------------
-
-# ---------------------------------------------------------
-# CLEAN TRACKS FOR VISUALIZATION
-# ---------------------------------------------------------
-
-# 1. Copy arrays
+# copy arrays
 tracks_clean = pred_tracks.copy()
 vis_clean    = pred_visibility.copy()
 
-# 2. Mark invalid points as invisible
+# mark invalid points as invisible
 invalid = (
     np.isnan(tracks_clean[..., 0]) |
     np.isnan(tracks_clean[..., 1])
 )
 vis_clean[invalid] = 0
 
-# 3. Forward-fill NaN values with last valid position
+# forward-fill NaN values with last valid position
 for track_idx in range(tracks_clean.shape[1]):
     track = tracks_clean[:, track_idx, :]  # (T, 2)
     mask = ~np.isnan(track[:, 0])
@@ -242,16 +218,14 @@ for track_idx in range(tracks_clean.shape[1]):
             elif last_valid is not None:
                 track[t] = last_valid
 
-# 4. After forward-fill, any remaining NaN can be set to (0, 0) safely
+# after forward-fill, any remaining NaN can be set to (0, 0) safely
 tracks_clean = np.nan_to_num(tracks_clean, nan=0.0)
 
 # 5. Clip to image bounds
 tracks_clean[..., 0] = np.clip(tracks_clean[..., 0], 0, Wr - 1)
 tracks_clean[..., 1] = np.clip(tracks_clean[..., 1], 0, Hr - 1)
 
-# ---------------------------------------------------------
-# VISUALIZATION 1: WITH TRACK HISTORY (trails)
-# ---------------------------------------------------------
+# da viz with tracks
 vis_trails = Visualizer(
     save_dir=SAVE_DIR,
     linewidth=2,
@@ -268,9 +242,7 @@ vis_trails.visualize(
 
 print("Track history visualization saved to:", SAVE_DIR)
 
-# ---------------------------------------------------------
-# VISUALIZATION 2: POINTS ONLY (no trails)
-# ---------------------------------------------------------
+# viz of only floating points
 vis_points = Visualizer(
     save_dir=SAVE_DIR,
     linewidth=2,
