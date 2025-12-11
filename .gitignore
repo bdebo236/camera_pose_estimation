@@ -1,7 +1,9 @@
 .venv
-data/*
+data/frames/*
 logs/*
 run.sh
 .env
 __pycache__/
 *.pyc
+*.npz
+*.npy
