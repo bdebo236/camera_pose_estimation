@@ -1,0 +1,34 @@
+Seq: IMG_0171_frames 
+
+APE w.r.t. translation part (m)
+(with Sim(3) Umeyama alignment)
+
+       max	1.325300
+      mean	0.184452
+    median	0.183577
+       min	0.033430
+      rmse	0.224299
+       sse	8.804292
+       std	0.127624
+RPE w.r.t. rotation angle in degrees (deg)
+for delta = {self.delta} ({self.delta_unit.value}) using all pairs
+(with Sim(3) Umeyama alignment)
+
+       max	25.132598
+      mean	1.219602
+    median	1.131410
+       min	0.098655
+      rmse	2.218286
+       sse	856.217810
+       std	1.852934
+RPE w.r.t. translation part (m)
+for delta = {self.delta} ({self.delta_unit.value}) using all pairs
+(with Sim(3) Umeyama alignment)
+
+       max	1.324489
+      mean	0.029267
+    median	0.020274
+       min	0.001587
+      rmse	0.103336
+       sse	1.858019
+       std	0.099105
