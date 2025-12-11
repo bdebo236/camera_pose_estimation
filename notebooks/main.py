@@ -2,7 +2,7 @@ import numpy as np
 
 from core.loader import load_all
 from core.correspondences import get_correspondences
-from core.pose_estimation import solve_pnp, Rt_to_matrix
+from core.pose_estimation import solve_pnp, solve_pnp_ransac, Rt_to_matrix
 from core.trajectory import build_global_trajectory
 from core.viz import plot_trajectory
 
@@ -16,8 +16,9 @@ def downsample_tracks(tracks, step):
 
 def main():
     # img_name = "IMG_0112"
-    img_name = "IMG_0171"
-    tracks_path = f"../data/tracks/{img_name}_cotracker_superpoint/cotracker_superpoint_tracks.npz"
+    # img_name = "IMG_0171"
+    img_name = "IMG_0175"
+    tracks_path = f"../data/tracks/{img_name}_tracks/cotracker_superpoint_tracks.npz"
     depth_path  = f"../data/depth/{img_name}_depth/{img_name}_depths.npz"
     intr_path   = "../data/intrinsics.json"
     output_folder = f"../results/{img_name}"
@@ -25,6 +26,22 @@ def main():
     # load all data (now returns corrected rotated + scaled K)
     print("[INFO] Loading data...")
     tracks, depth_maps, K, intr_meta = load_all(tracks_path, depth_path, intr_path)
+    
+    # --- ADDED: Track Length Filter ---
+    MIN_TRACK_LENGTH = 8 # Only keep tracks visible for at least 8 frames
+    
+    # Calculate length of each track (sum visibility column-wise)
+    track_lengths = tracks["visibility"].sum(axis=0) 
+    
+    # Create a mask for tracks that meet the minimum length requirement
+    long_track_mask = track_lengths >= MIN_TRACK_LENGTH
+    
+    # Apply the mask to the tracks dictionary
+    tracks["points"] = tracks["points"][:, long_track_mask, :]
+    tracks["visibility"] = tracks["visibility"][:, long_track_mask]
+    tracks["num_tracks"] = tracks["points"].shape[1]
+    
+    print(f"[INFO] Tracks filtered: {len(long_track_mask) - tracks['num_tracks']} removed. Remaining: {tracks['num_tracks']}")
 
     # downsample frames
     print("[INFO] Downsampling frames by factor 2...")
@@ -32,7 +49,9 @@ def main():
     tracks = downsample_tracks(tracks, step)
     depth_maps = depth_maps[::step]
 
-    T = tracks["num_frames"]
+    num_frames_tracks = tracks["num_frames"]
+    num_frames_depth = depth_maps.shape[0]
+    T = min(num_frames_tracks, num_frames_depth)
     print(f"[INFO] Frames after downsampling: {T}")
 
     relative_poses = []
@@ -57,10 +76,10 @@ def main():
     # save + visualize trajectory
     np.savez(f"{output_folder}/poses.npz", global_poses=np.array(global_poses))
     plot_trajectory(global_poses,
-                    title="Initial PnP Trajectory (No BA)",
+                    title="Trajectory",
                     save_path=f"{output_folder}/trajectory.png")
 
-    print("[INFO] Pose estimation finished (no BA).")
+    print("[INFO] Pose estimation finished.")
 
 
 if __name__ == "__main__":

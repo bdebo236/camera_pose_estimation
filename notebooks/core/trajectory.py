@@ -3,7 +3,6 @@ import numpy as np
 def compose_T(T_prev, T_delta):
     return T_prev @ T_delta
 
-
 def invert_T(T):
     R = T[:3, :3]
     t = T[:3, 3]
@@ -15,7 +14,6 @@ def invert_T(T):
     T_inv[:3, :3] = R_inv
     T_inv[:3, 3] = t_inv
     return T_inv
-
 
 def build_global_trajectory(relative_poses):
     global_poses = []
