@@ -1,0 +1,16 @@
+================================================================================
+TRAJECTORY COMPARISON SUMMARY (ALIGNED, NO SCALE)
+================================================================================
+Reference: Pose_3D
+Compared:  Pose_2D
+Alignment: True, Correct Scale: False
+================================================================================
+
+ATE (Absolute Trajectory Error):     9.645644
+RPE Translation:                      0.596272
+RPE Rotation (degrees):               0.075235
+Mean Euclidean Distance:              11.711906
+Median Euclidean Distance:            8.503629
+Max Euclidean Distance:               30.682104
+Hausdorff Distance:                   30.665827
+================================================================================
