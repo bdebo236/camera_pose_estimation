@@ -4,7 +4,9 @@ import torch
 import numpy as np
 import cv2
 
-IMG_NAME  = "IMG_0171"
+# IMG_NAME  = "IMG_0171"
+# IMG_NAME   = "IMG_0112"
+IMG_NAME   = "IMG_0309"
 VIDEO_PATH = f"../data/videos/{IMG_NAME}.MOV"
 SAVE_PATH  = f"../data/tracks/{IMG_NAME}_tracks/superpoint_kpts.npz"
 

@@ -10,11 +10,13 @@ sys.path.append(os.path.expanduser("~/co-tracker"))
 from cotracker.utils.visualizer import Visualizer, read_video_from_path
 from cotracker.predictor import CoTrackerPredictor
 
-IMG_NAME       = "IMG_0171"
+# IMG_NAME       = "IMG_0112"
+IMG_NAME       = "IMG_0309"
+# IMG_NAME       = "IMG_0171"
 VIDEO_PATH      = f"../data/videos/{IMG_NAME}.MOV"
 SP_KPTS_PATH    = f"../data/tracks/{IMG_NAME}_tracks/superpoint_kpts.npz"
 CHECKPOINT      = os.path.expanduser("~/co-tracker/checkpoints/scaled_offline.pth")
-SAVE_DIR        = f"../data/tracks/{IMG_NAME}_cotracker_superpoint"
+SAVE_DIR        = f"../data/tracks/{IMG_NAME}_tracks/"
 QUERY_FRAME     = 20        # like grid_query_frame=20
 MAX_POINTS      = 500       # limit for stability / speed
 
@@ -24,7 +26,7 @@ H0, W0 = 1440, 1920
 Hr, Wr = 720, 960
 
 # Visibility threshold for killing tracks
-VIS_THRESH = 0.5
+VIS_THRESH = 0.7
 
 # Parameters for adding new points for new objects
 NEW_POINT_INTERVAL = 30    # frames between new SuperPoint injections

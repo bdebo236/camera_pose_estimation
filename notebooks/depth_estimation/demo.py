@@ -12,7 +12,9 @@ from video_depth_anything.video_depth import VideoDepthAnything
 from utils.dc_utils import save_video  
 
 # User config
-IMG_NAME  = "IMG_0171"
+# IMG_NAME  = "IMG_0112"
+IMG_NAME  = "IMG_0309"
+# IMG_NAME  = "IMG_0171"
 VIDEO_PATH = os.path.expanduser(f"../data/videos/{IMG_NAME}.MOV")
 OUTPUT_DIR = os.path.expanduser(f"../data/depth/{IMG_NAME}_depth")
 CHECKPOINT = os.path.expanduser("~/vda/checkpoints/metric_video_depth_anything_vitl.pth")

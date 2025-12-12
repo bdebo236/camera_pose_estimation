@@ -1,8 +1,9 @@
 import cv2
 import os
 
-VIDEO = "/home/debbanerjee/camera_pose_estimation/data/videos/IMG_0112.MOV"
-OUTDIR = "/home/debbanerjee/camera_pose_estimation/data/frames/IMG_0112_frames"
+VIDEO_NAME = "IMG_0309"
+VIDEO = f"/home/debbanerjee/camera_pose_estimation/data/videos/{VIDEO_NAME}.MOV"
+OUTDIR = f"/home/debbanerjee/camera_pose_estimation/data/frames/{VIDEO_NAME}_frames"
 
 os.makedirs(OUTDIR, exist_ok=True)
 
