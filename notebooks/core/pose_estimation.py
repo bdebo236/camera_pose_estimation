@@ -70,3 +70,80 @@ def Rt_to_matrix(R, t):
     T[:3, :3] = R
     T[:3, 3] = t
     return T
+
+def compute_parallax(pts2d_i, pts2d_j, K):
+    """
+    Returns median normalized parallax between two frames.
+    Small value → almost pure rotation.
+    """
+    pts_i_norm = cv2.undistortPoints(
+        pts2d_i.astype(np.float32), K.astype(np.float32), None
+    ).reshape(-1,2)
+
+    pts_j_norm = cv2.undistortPoints(
+        pts2d_j.astype(np.float32), K.astype(np.float32), None
+    ).reshape(-1,2)
+
+    diff = pts_i_norm - pts_j_norm
+    parallax = np.linalg.norm(diff, axis=1)
+    return np.median(parallax)
+
+def solve_relative_pose_essential(pts2d_i, pts2d_j, K):
+    """
+    Estimate rotation-only relative pose using essential matrix.
+    Translation is unreliable if parallax is low → return t = zero.
+    """
+    E, inliers = cv2.findEssentialMat(
+        pts2d_i.astype(np.float32),
+        pts2d_j.astype(np.float32),
+        K.astype(np.float32),
+        method=cv2.RANSAC,
+        prob=0.999,
+        threshold=1.0
+    )
+
+    if E is None:
+        return None, None, False
+
+    _, R, t, _ = cv2.recoverPose(
+        E,
+        pts2d_i.astype(np.float32),
+        pts2d_j.astype(np.float32),
+        K.astype(np.float32)
+    )
+
+    return R, t.reshape(3), True
+
+def estimate_rotation_window(tracks, K, i, window=5):
+    """
+    Compute a stable rotation for frame i using frames [i-window, ..., i-1].
+    Returns averaged rotation matrix.
+    """
+    Rs = []
+
+    for k in range(max(0, i - window), i):
+
+        # shared tracks only
+        vis_k = tracks["visibility"][k]
+        vis_i = tracks["visibility"][i]
+        common = np.logical_and(vis_k == 1, vis_i == 1)
+
+        if np.sum(common) < 8:
+            continue
+
+        pts2d_k = tracks["points"][k, common]
+        pts2d_i = tracks["points"][i, common]
+
+        # essential matrix
+        R, t, ok = solve_relative_pose_essential(pts2d_k, pts2d_i, K)
+        if ok:
+            Rs.append(R)
+
+    if len(Rs) == 0:
+        return np.eye(3)
+
+    # average all rotations using SVD
+    R_stack = sum(Rs)
+    U, _, Vt = np.linalg.svd(R_stack)
+    R_avg = U @ Vt
+    return R_avg
